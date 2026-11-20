@@ -11,7 +11,7 @@ python3 -m promo_finder run "input_pack/<show folder>"          # same pipeline 
 python3 -m promo_finder run examples/demo_show --no-llm         # try it now on the included demo show, no API key
 ```
 
-Plain Python 3.9+ standard library: **nothing to install**. Every run, check and evaluation step, with exact commands, is in **[RUNBOOK.md](RUNBOOK.md)**. The default model is the **cheapest model on Qubrid AI (GLM-4.7-Flash, $0)**, and any OpenAI-compatible model can be swapped in.
+The pipeline itself is plain Python 3.9+ standard library — **no pip installs**. The web app adds Node 20+ and MongoDB (`npm run app` installs its own deps; it also checks MongoDB is running and says how to start it). Every run, check and evaluation step, with exact commands, is in **[RUNBOOK.md](RUNBOOK.md)**. The default model is the **cheapest model on Qubrid AI (GLM-4.7-Flash, $0)**, and any OpenAI-compatible model can be swapped in.
 
 ---
 

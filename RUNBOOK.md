@@ -1,6 +1,13 @@
 # RUNBOOK: every run, how to do it, and what is still pending
 
-All commands run from the repo root on Python 3.9+, with no installs. `<SHOW>` means the show folder, e.g. `input_pack/<show name>` (the confidential pack, not in git) or `examples/demo_show` (the demo included in the repo).
+Two toolchains, and only the second one needs installing:
+
+| Part | Needs | Used for |
+|---|---|---|
+| pipeline + CLI (`promo_finder/`, `tools/`) | Python 3.9+, standard library only — no installs | steps 1, 2, 4-9 |
+| web app (`mern/`) | Node 20+, MongoDB, `npm install` (automatic) | step 3 |
+
+All commands run from the repo root. `<SHOW>` means the show folder, e.g. `input_pack/<show name>` (the confidential pack, not in git) or `examples/demo_show` (the demo included in the repo).
 
 ---
 
@@ -9,6 +16,9 @@ All commands run from the repo root on Python 3.9+, with no installs. `<SHOW>` m
 | Item | Status |
 |---|---|
 | Tool (CLI), web app, tests, README | ✅ done, in this repo |
+| Web app rebuilt as MERN (`mern/`; the stdlib UI was retired, this is the only front end) | ✅ done - `npm run app` from the repo root |
+| Live demo at `https://promo-finder-mern.onrender.com` (Render free + keep-alive workflow) | ✅ running, **read-only** (`PROMO_READ_ONLY=1`): browsing, storyboard, ✓/✗ and CSV export work; uploads and new runs are refused |
+| Self-verification a stranger can run (`/verify`, `/api/selftest`) | ✅ 14 pass locally; 11 pass / 0 fail / 2 skip on the public deploy |
 | Official free-model run on the full pack (`outputs/full_run`, 155 candidates → 149 ranked, $0) | ✅ done. Its original live log is kept as `raw/llm_calls_live_run.jsonl`; the reports were regenerated from cache with the final code (identical clips and ranking) |
 | Paid-model comparison runs (Qwen3.5-Flash, DeepSeek-V4-Pro) and their blind reviews | ✅ done ($0.86 of a $4 test budget) |
 | Evaluation: independent picks, blind review of every candidate, judge stability | ✅ done (`eval/`, kept private) |
@@ -51,21 +61,50 @@ python3 -u -m promo_finder run "<SHOW>" --out outputs/full_run
 
 ## 3. Web app
 
-The web app is the MERN one in `mern/` (React + Express + MongoDB). It runs this same pipeline
-and needs nothing from the CLI beyond the scripts.
+The web app is the MERN one in `mern/` (React + Express + MongoDB); it runs this same pipeline and
+needs nothing from the CLI beyond the scripts.
 
 ```bash
 npm run app                   # from the repo root: deps, MongoDB check, API :4000, UI :5173
 ```
-It creates `mern/.env` from `.env.example` on first run (set `MONGODB_URI` there; the provider key
-is read from the repo-root `.env`), installs dependencies once, refuses to start if MongoDB is not
-answering, and opens the browser. `npm run app -- --no-open` skips the browser; Ctrl+C stops both.
-- **Promos** tab: pick a run. **New run** tab: pick or upload a show, choose models, press *Find promos*.
-- Runs land in `outputs/<show>-<model>-<time>/` and are ingested into MongoDB; CLI runs appear after `npm run sync`.
-- Hosting, environment variables and the free-tier caveats: `mern/DEPLOY.md`. Never host it with the confidential scripts or outputs inside the image.
-- Any hosted copy should run with `PROMO_READ_ONLY=1` (what `render.yaml` sets): the public demo then serves
-  finished runs, storyboards, reviews and CSV export, but refuses uploads and new runs — one shared database
-  has no accounts, so a visitor's scripts would otherwise be visible to everyone. Locally the flag is off.
+It creates `mern/.env` from `.env.example` on first run (set `MONGODB_URI` there; the provider key is
+read from the repo-root `.env`), installs dependencies once, refuses to start if MongoDB is not
+answering, and opens the browser only once the API answers too. `npm run app -- --no-open` skips the
+browser, `PORT=4001 npm run app` moves the API, Ctrl+C stops both. Already running in another
+terminal? It reuses that API; a port taken by something else is named, not crashed into.
+
+- **Promos** tab: pick a run (top-right). The hero is the #1 clip, then the Top 10 rail, then every
+  clip as a poster. Click one for the phone-frame storyboard, the timestamps (⧉ copy), the judge's
+  three scores and ✓ post / ✗ skip with a note.
+- **New run** tab: pick a show folder or **drop a `.zip`** (only `.txt/.md/.fountain` are extracted,
+  folders flattened, ≤5 MB per file, ≤100 MB unzipped, ≤60 MB body), choose provider/model/
+  judge/fallback/workers/budget, press *Find promos*. Progress is live and cancellable.
+- **Files never go to the database.** The upload is unpacked to `uploads/<show>/`, the pipeline writes
+  `outputs/<show>-<model>-<time>/` (`promos.json`, `promos.csv`, `report.html`, `raw/`), and only the
+  clip index is ingested into MongoDB. One zip → one **new** show name: re-uploading the same name
+  merges into the existing folder.
+- CLI runs under `outputs/` are ingested on boot, or on demand with `npm run sync`.
+- On a database without it, the server seeds `demo_show-rules` (rules-only pass over
+  `examples/demo_show`, 3 clips, ~0.5 s, no key, $0) so the app is never blank. `PROMO_SEED_DEMO=0`
+  disables it.
+- **Self-check without a browser:**
+  ```bash
+  curl -s localhost:4000/api/selftest | python -m json.tool | head -20      # 14 checks, ~1.5 s
+  ```
+  or open <http://localhost:4000/verify> and press the button.
+- **Reset local data** (files and database are independent):
+  ```bash
+  rm -rf uploads/<show> outputs/<run>                 # scripts and artifacts
+  mongosh promo_finder --eval 'db.dropDatabase()'     # clip index; the demo run re-seeds on next boot
+  ```
+- Hosting, environment variables and the free-tier caveats: `mern/DEPLOY.md`. Never host it with the
+  confidential scripts or outputs inside the image.
+- A hosted copy must run with `PROMO_READ_ONLY=1` (what `render.yaml` sets): the public demo serves
+  finished runs, storyboards, reviews and CSV export but refuses `/api/upload` and `/api/run`, because
+  one shared database has no accounts and a visitor's scripts would otherwise be visible to everyone.
+  Locally the flag is off.
+- Pointing a laptop at a **remote** database is guarded: local `outputs/` is not ingested into a
+  `mongodb+srv` URI unless `PROMO_INGEST_ALL=1` - this is what kept Kuku's clips off the public site.
 
 ---
 
@@ -147,6 +186,8 @@ python3 -c "t=open('docs/solution_template.html').read(); b=open('docs/solution_
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --no-pdf-header-footer \
         --print-to-pdf=docs/solution.pdf "file://$PWD/docs/solution.html"
 python3 -c "from pypdf import PdfReader; print(len(PdfReader('docs/solution.pdf').pages), 'pages')"   # must be ≤ 2
+# The PDF step above uses the macOS Chrome path; on Windows use, from the repo root:
+#   "C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf=docs/solution.pdf "file:///C:/Users/HELLO/Desktop/Codings/Kuku-main/docs/solution.html"
 ```
 
 ---
@@ -157,3 +198,12 @@ python3 -c "from pypdf import PdfReader; print(len(PdfReader('docs/solution.pdf'
 git add -A && git status --short          # input_pack/, outputs/, eval/, uploads/, .env, docs/solution* must NOT appear
 git commit -m "…" && git push
 ```
+A push to `main` redeploys Render automatically (~3-4 min). Afterwards check the deployed behaviour:
+
+```bash
+curl -s https://promo-finder-mern.onrender.com/api/config   | grep -o '"can_run":[a-z]*'      # must be false
+curl -s https://promo-finder-mern.onrender.com/api/selftest | python -c "import json,sys; print(json.load(sys.stdin)['summary'])"
+```
+Changing an environment variable in `render.yaml` (this repo's Blueprint) needs the Blueprint to be
+synced in the Render dashboard; changing one in the dashboard restarts the service on save. Never push
+while a long run is in flight - the redeploy kills the job and wipes the container's `uploads/`.
