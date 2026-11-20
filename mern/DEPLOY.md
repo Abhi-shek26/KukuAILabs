@@ -172,9 +172,11 @@ Schema changes are safe: ingestion is idempotent and never touches editor review
 | `MongoServerError: bad auth` | password not URL-encoded, or the DB user was not created in *this* project |
 | `MongoDB not reachable` in logs, service still Live | IP allowlist: add `0.0.0.0/0` |
 | Blank white page | the client build did not run — check the `client` stage of the build log |
+| Every model call fails with `CERTIFICATE_VERIFY_FAILED … unable to get local issuer certificate` | the image is missing `ca-certificates` (Debian slim has none), so Python cannot verify HTTPS. Fixed in `mern/Dockerfile` (`python3 ca-certificates` + `update-ca-certificates`); rebuild. Symptom: ~2.5 min per episode of retries, then a rules-only list |
 | `/verify`: "could not start python3" | the image lost `python3`: rebuild from `mern/Dockerfile`, do not use a Node-only runtime |
 | `/verify`: cut audit fails "can't open file /app/tools/…" | `tools/` was not copied into the image (fixed in commit `35ac3c8`+, verify your branch) |
 | Build is slow / huge context | `.dockerignore` must be at the repo root; without it the build uploads `input_pack/` and `outputs/` |
+| A run refuses to start with `cannot reach … from the pipeline` | the new pre-flight probe could not reach the provider from Python's TLS stack (bad URL, DNS, missing CA bundle). Fixed in seconds instead of failing every episode |
 | A run lists clips but the storyboard is empty / `clip` returns 400 | the run was ingested on another machine, so its stored `input_dir` is a path that does not exist here. The API falls back to the show folder on this host; re-ingesting (`POST /api/sync`) rewrites the path too |
 
 ## Alternatives to Render

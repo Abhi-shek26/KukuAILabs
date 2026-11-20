@@ -10,8 +10,11 @@ COPY mern/client ./
 RUN npm run build
 
 FROM node:20-bookworm-slim
+# ca-certificates is NOT part of the slim image, and without it Python cannot verify any HTTPS
+# endpoint: every model call fails with CERTIFICATE_VERIFY_FAILED (seen in production).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 \
+ && apt-get install -y --no-install-recommends python3 ca-certificates \
+ && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -26,8 +29,8 @@ COPY --from=client /app/mern/client/dist ./mern/client/dist
 RUN cd mern/server && (npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund)
 RUN mkdir -p /app/outputs
 
+# No PORT here: hosts inject their own (Render, Spaces); env.js defaults to 4000 for docker run.
 ENV HOST=0.0.0.0 \
-    PORT=4000 \
     NODE_ENV=production \
     PYTHON_BIN=python3 \
     PROMO_SHOW_ROOTS=examples \

@@ -29,6 +29,62 @@ function numberOr(v, def, lo, hi, cast = Number) {
   return x;
 }
 
+
+// One call, resolved in seconds, to catch what otherwise costs the user a whole run: the
+// pipeline retries each episode, so a broken provider URL or missing CA bundle burns ~2.5 min
+// per episode and then "succeeds" with rules-only baseline picks. Probe with Python's own TLS
+// stack, because that is what the pipeline uses.
+function probeProvider(baseUrl, timeoutMs = 20_000) {
+  const code = [
+    "import sys, urllib.request, urllib.error",
+    "url = sys.argv[1]",
+    "try:",
+    "    urllib.request.urlopen(url, timeout=15).read(64)",
+    "    print('OK')",
+    "except urllib.error.HTTPError as e:",
+    "    print('OK' if e.code < 500 else 'HTTP %d' % e.code)",
+    "except Exception as e:",
+    "    print('FAIL ' + type(e).__name__ + ': ' + str(e))",
+  ].join(String.fromCharCode(10));
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (v) => {
+      if (!settled) {
+        settled = true;
+        resolve(v);
+      }
+    };
+    let child;
+    try {
+      child = spawn(PYTHON_BIN, ["-c", code, `${baseUrl}/models`], {
+        cwd: REPO_ROOT,
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+      });
+    } catch {
+      return settle({ ok: true, note: "probe skipped (python would not start)" });
+    }
+    let out = "";
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {}
+      settle({ ok: true, note: "probe timed out — starting the run anyway" });
+    }, timeoutMs);
+    child.stdout.on("data", (d) => (out += d));
+    child.on("error", () => {
+      clearTimeout(timer);
+      settle({ ok: true, note: "probe skipped (python would not start)" });
+    });
+    child.on("close", () => {
+      clearTimeout(timer);
+      const line = (out.trim().split(String.fromCharCode(10)).pop() || "").trim();
+      if (line.startsWith("FAIL")) settle({ ok: false, message: line.slice(5).trim() });
+      else settle({ ok: true, note: line || "no output" });
+    });
+  });
+}
+
 export async function startJob(body) {
   if (current) throw Object.assign(new Error("a run is already in progress"), { status: 409 });
 
@@ -54,6 +110,23 @@ export async function startJob(body) {
   const apiKey = (body.api_key || "").trim();
   const customUrl = params.base_url && params.base_url.replace(/\/+$/, "") !== DEFAULT_BASE_URL;
   if (!rulesOnly && !apiKey && customUrl) throw Object.assign(new Error("enter an API key for this provider"), { status: 400 });
+
+  if (!rulesOnly) {
+    const base = (params.base_url || DEFAULT_BASE_URL).replace(/\/+$/, "");
+    const probe = await probeProvider(base);
+    if (!probe.ok) {
+      const cert = /CERTIFICATE_VERIFY_FAILED|certificate verify failed/i.test(probe.message);
+      throw Object.assign(
+        new Error(
+          cert
+            ? `this deployment cannot verify TLS certificates (${probe.message}). The image is missing ca-certificates — rebuild it from the current Dockerfile.`
+            : `cannot reach ${base} from the pipeline: ${probe.message}`,
+        ),
+        { status: 400 },
+      );
+    }
+    console.log(`provider probe (${base}): ${probe.note}`);
+  }
 
   const tag = rulesOnly ? "rules" : slug((params.model || DEFAULT_MODEL).split("/").pop());
   const runName = `${slug(path.basename(showPath))}-${tag}-${stamp()}`;
