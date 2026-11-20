@@ -53,6 +53,17 @@ const norm = (id) => String(id).replace(/\\/g, "/").replace(/^\.\//, "");
 export function resolveShow(showId) {
   const want = norm(showId);
   const hit = discoverShows().find((s) => norm(s.id) === want || s.name === showId);
-  if (!hit) throw new Error("unknown show");
-  return path.resolve(REPO_ROOT, hit.id);
+  if (hit) return path.resolve(REPO_ROOT, hit.id);
+
+  // A folder can exist without being listed: e.g. an upload on a deployment whose
+  // PROMO_SHOW_ROOTS only names "examples". Accept it if it stays inside the repo and
+  // actually holds scripts, so upload -> parse -> run works there too.
+  const abs = path.resolve(REPO_ROOT, want);
+  const rel = path.relative(REPO_ROOT, abs);
+  const inside = rel && !rel.startsWith("..") && !path.isAbsolute(rel);
+  if (inside && fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
+    const hasScripts = fs.readdirSync(abs).some((f) => TEXT_EXT.includes(path.extname(f).toLowerCase()));
+    if (hasScripts) return abs;
+  }
+  throw new Error("unknown show");
 }

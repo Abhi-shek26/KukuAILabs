@@ -15,7 +15,7 @@ services:
       - key: HOST
         value: 0.0.0.0
       - key: PROMO_SHOW_ROOTS
-        value: examples # the public demo show only — never Kuku's pack
+        value: examples,uploads # demo show + whatever a visitor uploads — never Kuku's pack
       - key: PROMO_UI_REQUIRE_KEY
         value: "1" # visitors bring their own provider key
       - key: PROMO_SEED_DEMO
