@@ -21,7 +21,7 @@ All commands run from the repo root. `<SHOW>` means the show folder, e.g. `input
 | Self-verification a stranger can run (`/verify`, `/api/selftest`) | ✅ 14 pass locally; 11 pass / 0 fail / 2 skip on the public deploy |
 | Official free-model run on the full pack (`outputs/full_run`, 155 candidates → 149 ranked, $0) | ✅ done. Its original live log is kept as `raw/llm_calls_live_run.jsonl`; the reports were regenerated from cache with the final code (identical clips and ranking) |
 | Paid-model comparison runs (Qwen3.5-Flash, DeepSeek-V4-Pro) and their blind reviews | ✅ done ($0.86 of a $50 test budget) |
-| Evaluation: independent picks, blind review of every candidate, judge stability | ✅ done (`eval/`, kept private) |
+| Evaluation: independent picks, blind review of every candidate, judge stability | ✅ done - the numbers are quoted in README §5; the artifacts stay in `eval/` and are **not** part of the submission |
 | README numbers | ✅ filled |
 
 
@@ -127,9 +127,11 @@ python3 -m promo_finder run "<SHOW>" --no-llm --out outputs/_rules_baseline     
 
 ---
 
-## 6. Evaluation against independent reviewers
+## 6. Internal evaluation (not submitted)
 
-The reviewer instructions are in `tools/review_prompts.md`. Reviewers' outputs live in `eval/`, which is git-ignored because it quotes the scripts.
+Nothing in this section ships. `eval/` is git-ignored and quotes the scripts, so it stays on this
+machine; it is documented only so the numbers quoted in README §5 can be reproduced on request.
+The reviewer instructions are in `tools/review_prompts.md`.
 
 **a) Recall: is the reviewer's best clip among the tool's candidates?**
 ```bash
@@ -183,7 +185,7 @@ Fill the README's ⟦FREE_…⟧ markers (sections 1, 5 and 6) from that output,
 ## 9. Pushing updates
 
 ```bash
-git add -A && git status --short          # input_pack/, outputs/, eval/, uploads/, .env, docs/solution* must NOT appear
+git add -A && git status --short          # input_pack/, outputs/, eval/, uploads/, .env, docs/ must NOT appear
 git commit -m "…" && git push
 ```
 A push to `main` redeploys Render automatically (~3-4 min). Afterwards check the deployed behaviour:

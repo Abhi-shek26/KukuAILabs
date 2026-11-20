@@ -7,7 +7,7 @@ uploads/
 .env
 .env.local
 *.zip
-docs/solution*.html
+docs/
 
 # never needed in an image
 .git/

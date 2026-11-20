@@ -105,7 +105,7 @@ The ranked list quotes the screenplay — storyboard lines are verbatim dialogue
 quotes hooks and cliffhangers — so publishing it would redistribute Kuku's script. That is why it
 is delivered through the private folder named in the submission form (`outputs/full_run/report.html`,
 `promos.csv`, `promos.json`, `run_summary.json`) and not through the public URL.
-`docs/SUBMISSION_CHECKLIST.md` and `RUNBOOK.md` state the same rule for the Python app.
+`RUNBOOK.md` §2 states the same rule for the pipeline's own artifacts.
 
 This costs a reviewer nothing about the mechanics, which is what the deployment is for:
 
@@ -227,7 +227,7 @@ the API shells out to the Python pipeline. `./render.yaml` is the Render bluepri
 the same Dockerfile with `PROMO_UI_REQUIRE_KEY=1` so visitors bring their own provider key.
 
 **Never deploy Kuku's pack.** `.dockerignore` keeps `input_pack/`, `outputs/`, `uploads/`,
-`docs/solution*` and `.env` out of the build context, so a public deployment can't contain
+`docs/` and `.env` out of the build context, so a public deployment can't contain
 them. Verify any time with:
 
 ```bash

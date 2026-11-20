@@ -279,5 +279,6 @@ tools/            audits, robustness tests, evaluation scripts (all offline exce
                   review_prompts.md = exact instructions given to the independent AI reviewers
 RUNBOOK.md        how to run every step (main run, web app, checks, evaluations, PDF), and what's pending
 examples/demo_show/  a short ORIGINAL 3-episode demo show in the same format (safe to share)
-docs/             submission checklist, walkthrough-video talking points
 ```
+(Not in git, by design: `input_pack/` and `outputs/` because they quote Kuku's scripts, `eval/`
+because it repeats them, `docs/` because it holds the solution doc and my own submission notes.)

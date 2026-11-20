@@ -14,8 +14,7 @@ __pycache__/
 .DS_Store
 
 # the solution doc quotes the confidential scripts: submit it via the form, don't publish it
-docs/solution*.pdf
-docs/solution*.html
+docs/
 
 # the assignment brief itself (Kuku's document): not ours to publish
 /Kuku*.pdf
