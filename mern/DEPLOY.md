@@ -14,10 +14,11 @@ because Render's filesystem is ephemeral.
 **What gets deployed:** `promo_finder/`, `tools/`, `examples/demo_show`, and `mern/`.
 `input_pack/`, `outputs/` and `.env` are excluded by `.dockerignore` and never exist in the
 image — verified with `docker run … ls /app` (it shows exactly `examples  mern  outputs
-promo_finder  tools`). A public URL can therefore never serve Kuku's script or your API key. What the public copy
-shows instead is the seeded `demo_show-rules` run from `examples/demo_show`; the 149-clip run on
-Kuku's pack stays private because it quotes the screenplay (see "What is public, and what is
-private" in README.md).
+promo_finder  tools`). A public URL can therefore never serve Kuku's script or your API key.
+
+What the public copy shows instead is the seeded `demo_show-rules` run from
+`examples/demo_show`. The 149-clip run on Kuku's pack stays private because the ranked list
+quotes the screenplay — see "What is public, and what is private" in `README.md`.
 
 ---
 
