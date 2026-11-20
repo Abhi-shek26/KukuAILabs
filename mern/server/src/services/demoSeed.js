@@ -21,10 +21,13 @@ function runPython(args) {
   });
 }
 
-// Never touches an existing deployment: it only acts when MongoDB has no runs at all.
+// Keeps exactly one demo run present. It used to act only on a completely empty database, which
+// meant a laptop whose outputs/ already had runs never got the demo — the one run that works with
+// no API key. It is cheap (one rules-only pass, ~0.5 s, $0) and the name is deterministic, so it
+// cannot duplicate. PROMO_SEED_DEMO=0 turns it off.
 export async function ensureDemoRun({ enabled = true } = {}) {
   if (!enabled) return null;
-  if ((await Run.countDocuments()) > 0) return null;
+  if (await Run.countDocuments({ name: DEMO_RUN })) return null;
   const demo = discoverShows().find((s) => s.name === "demo_show");
   if (!demo) return null;
 
