@@ -12,7 +12,8 @@
     "build": "npm run build --prefix client",
     "start": "npm start --prefix server",
     "seed": "node server/src/seed.js",
-    "sync": "node server/src/seed.js"
+    "sync": "node server/src/seed.js",
+    "parity": "node scripts/parity.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
