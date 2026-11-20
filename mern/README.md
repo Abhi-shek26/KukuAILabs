@@ -153,6 +153,7 @@ field, all 149 storyboards, and the exported CSV bytes. It exits non-zero on any
 | `npm run parity` (MERN vs Python) | **6/6**: shows, both parse payloads, 149 clips, 149 storyboards, CSV bytes |
 | `/api/selftest` locally | **14 pass · 0 fail · 0 skip** in 1.4 s |
 | `/api/selftest` as a public deploy would see it (fresh DB, `examples/` only, key required) | **11 pass · 0 fail · 2 skip** in 0.9 s, and boots with the `demo_show-rules` run ready to browse |
+| **The live deployment** (`https://promo-finder-mern.onrender.com`, Render free, Blueprint from `render.yaml`) | `/api/selftest` **11 pass · 0 fail · 2 skip**, `/api/runs` shows the seeded `demo_show-rules` run (3 clips), storyboard 27 lines, CSV 17 columns |
 | The Docker image, built and run locally (`docker build -f mern/Dockerfile .`) | same **11 pass · 0 fail · 2 skip** inside the container, storyboard served from MongoDB after a restart, and `/app` free of Kuku's material |
 
 ## Deploy

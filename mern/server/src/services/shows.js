@@ -36,6 +36,16 @@ function walk(dir, root, depth, out) {
   }
 }
 
+// Where a run's scripts live on THIS host. The stored input_dir is an absolute path from
+// whichever machine ran the pipeline (a local dev box, a container, a different clone), so it
+// is often stale after importing a database — fall back to the show's folder here by name.
+export function showDirFor(run) {
+  const stored = run?.inputDir;
+  if (stored && fs.existsSync(stored)) return stored;
+  const hit = discoverShows().find((s) => s.name === run?.show);
+  return hit ? path.resolve(REPO_ROOT, hit.id) : null;
+}
+
 const norm = (id) => String(id).replace(/\\/g, "/").replace(/^\.\//, "");
 
 // Accepts the app's own id and the Python UI's backslash form, so links and

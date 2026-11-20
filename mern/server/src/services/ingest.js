@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { OUTPUTS_DIR, REPO_ROOT } from "../env.js";
 import { Run, Promo, Review } from "../models/index.js";
-import { discoverShows } from "./shows.js";
+import { discoverShows, showDirFor } from "./shows.js";
 import { episodeDuration, loadShow } from "../lib/screenplay.js";
 
 const readJson = (p) => {
@@ -135,13 +135,7 @@ export async function ingestAll() {
 }
 
 export async function episodeSecondsFor(run) {
-  // A database can be imported from another machine (e.g. local dev -> Atlas), so the stored
-  // absolute inputDir may not exist here. Fall back to the show's folder on this machine.
-  let dir = run?.inputDir;
-  if (!dir || !fs.existsSync(dir)) {
-    const hit = discoverShows().find((s) => s.name === run?.show);
-    dir = hit ? path.resolve(REPO_ROOT, hit.id) : null;
-  }
+  const dir = showDirFor(run); // stored path, or the show's folder on this host
   if (!dir) return {};
   try {
     const eps = loadShow(dir);

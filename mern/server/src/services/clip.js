@@ -1,4 +1,5 @@
 import { blocksBetween, episodesFor } from "../lib/screenplay.js";
+import { showDirFor } from "./shows.js";
 // Python's round(x, 1): one decimal place, ties to even, decided on the exact binary value.
 // 20 decimal places expose that value, so 7.55 -> 7.5 and 1.05 -> 1.1 exactly like Python.
 // Checked against CPython on 20,401 values 0.00-200.00: 0 mismatches.
@@ -19,8 +20,9 @@ function round1(x) {
 }
 
 export function clipPayload(run, promo) {
-  if (!run?.inputDir) throw new Error("the scripts for this run are no longer on disk");
-  const eps = episodesFor(run.inputDir);
+  const dir = showDirFor(run);
+  if (!dir) throw new Error("the scripts for this run are no longer on disk");
+  const eps = episodesFor(dir);
   const lines = [];
   let offset = 0;
 

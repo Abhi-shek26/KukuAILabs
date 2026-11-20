@@ -100,6 +100,43 @@ that is the intended behaviour, not a failure.
 Reference numbers when you run it locally against the real run:
 `npm run parity` → 6/6 identical to the Python app; `/api/selftest` → 14 pass / 0 fail.
 
+## Keeping a free instance warm
+
+A free Render web service sleeps after **15 minutes without traffic**, and waking it takes
+40-50 s — long enough that a reviewer opening your link cold may see nothing and leave.
+
+The free plan allows **750 instance-hours per month**; running 24/7 uses about **730**, so
+keeping it awake does not exceed the plan. The sleep is triggered by idleness, not by quota.
+Two ways to remove the idleness:
+
+**A. The GitHub Action in this repo** (`.github/workflows/keepalive.yml`)
+
+1. Repo → **Settings → Secrets and variables → Actions → Variables → New repository variable**
+2. Name `PROMO_APP_URL`, value `https://promo-finder-mern.onrender.com` (no trailing slash)
+3. It runs every 10 minutes (`cron: "*/10 * * * *"`), curls `/api/health`, and fails visibly in
+   the Actions tab if the app is down — so it doubles as uptime monitoring. Use **Run workflow**
+   to trigger it once immediately.
+
+**B. An external uptime monitor** (no repo changes): UptimeRobot / cron-job.org → new HTTP(S)
+monitor → URL `https://<app>/api/health` → interval **5 minutes** → save. The free tiers allow
+this and are more punctual than GitHub's scheduler.
+
+**Prove it is warm** — run twice, 20 minutes apart; both should be well under a second:
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{time_total}s
+" https://promo-finder-mern.onrender.com/api/health
+```
+
+A first request of ~40 s means the instance was asleep; anything under 1 s means warm.
+
+**If a reviewer does land on a cold instance:** open `/verify` first and wait for it to render
+(~40 s), then share the link. `/verify` itself performs several round-trips, so once it loads
+the app is fully awake.
+
+> Free instances are also restarted on every deploy. After a `git push`, the first request is
+> slow again for ~40 s — the keep-alive probe recovers it within 10 minutes.
+
 ## Free-tier reality (read before you promise anything)
 
 - **Cold start:** a free web service sleeps after 15 min idle; the next request takes ~30-60 s.
