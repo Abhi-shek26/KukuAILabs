@@ -61,18 +61,9 @@ def main(argv=None) -> int:
     p = sub.add_parser("parse", help="parse a show and print a summary (no AI)")
     p.add_argument("input")
 
-    w = sub.add_parser("serve", help="start the web UI (http://127.0.0.1:8765)")
-    w.add_argument("--host", default="127.0.0.1", help="use 0.0.0.0 only when hosting (then set PROMO_UI_REQUIRE_KEY=1)")
-    w.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8765")))
-    w.add_argument("--open", action="store_true", help="open the browser")
-
     args = ap.parse_args(argv)
 
-    if args.cmd == "serve":
-        from .server import serve
-        serve(args.host, args.port, args.open)
-        return 0
-
+    # The web app is the MERN one in mern/ (React + Express + MongoDB); it spawns this CLI.
     if args.cmd == "parse":
         from .screenplay import load_show, render_blocks
         eps = load_show(args.input)

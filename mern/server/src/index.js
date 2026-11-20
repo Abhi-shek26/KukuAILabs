@@ -57,7 +57,18 @@ const boot = async () => {
     console.error(`MongoDB not reachable: ${e.message}`);
     console.error("Start it (mongod) or set MONGODB_URI, then restart. The API stays up and will error on data routes.");
   }
-  app.listen(PORT, HOST, () => console.log(`Promo Finder MERN API on http://${HOST}:${PORT}`));
+  const server = app.listen(PORT, HOST, () => console.log(`Promo Finder MERN API on http://${HOST}:${PORT}`));
+  server.on("error", (e) => {
+    if (e.code === "EADDRINUSE") {
+      console.error(
+        `port ${PORT} is already in use — probably another copy of the API. Stop it, then retry,
+` +
+          `or pick another port:  ${process.platform === "win32" ? "set PORT=4001 && " : "PORT=4001 "}npm run dev`,
+      );
+      process.exit(1);
+    }
+    throw e;
+  });
 };
 
 boot();

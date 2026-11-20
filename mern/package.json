@@ -5,6 +5,7 @@
   "description": "Promo Finder as a MERN app (MongoDB + Express + React + Node) — same Kuku look, same pipeline",
   "type": "module",
   "scripts": {
+    "app": "node scripts/app.mjs",
     "install:all": "npm install --prefix server && npm install --prefix client",
     "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm run dev --prefix server",
@@ -12,8 +13,7 @@
     "build": "npm run build --prefix client",
     "start": "npm start --prefix server",
     "seed": "node server/src/seed.js",
-    "sync": "node server/src/seed.js",
-    "parity": "node scripts/parity.mjs"
+    "sync": "node server/src/seed.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

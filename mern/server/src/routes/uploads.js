@@ -3,6 +3,7 @@ import AdmZip from "adm-zip";
 import fs from "node:fs";
 import path from "node:path";
 import { REPO_ROOT, TEXT_EXT } from "../env.js";
+import { refuseWhenReadOnly } from "./jobs.js";
 import { slug } from "../lib/fmt.js";
 
 export const uploads = express.Router();
@@ -15,8 +16,8 @@ const safeName = (base) =>
   String(base).replace(/[^A-Za-z0-9 ._()\-]+/g, "_").replace(/^[ .]+|[ .]+$/g, "").slice(0, 120) || "episode.txt";
 
 // Uploaded zips are untrusted: only text files are kept, paths are flattened,
-// and sizes/counts are capped — the same rules as save_upload() in server.py.
-uploads.post("/upload", express.raw({ type: "*/*", limit: "60mb" }), (req, res, next) => {
+// and sizes/counts are capped — the same rules the original single-file UI applied.
+uploads.post("/upload", refuseWhenReadOnly, express.raw({ type: "*/*", limit: "60mb" }), (req, res, next) => {
   try {
     const showName = String(req.query.show || "uploaded show").trim();
     const filename = String(req.query.filename || "").trim();

@@ -1,0 +1,11 @@
+{
+  "name": "promo-finder",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Promo Finder: the Python pipeline in promo_finder/ and the MERN web app in mern/",
+  "scripts": {
+    "app": "npm --prefix mern run app --",
+    "dev": "npm --prefix mern run dev",
+    "install:all": "npm --prefix mern run install:all"
+  }
+}
