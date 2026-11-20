@@ -135,9 +135,16 @@ export async function ingestAll() {
 }
 
 export async function episodeSecondsFor(run) {
-  if (!run?.inputDir || !fs.existsSync(run.inputDir)) return {};
+  // A database can be imported from another machine (e.g. local dev -> Atlas), so the stored
+  // absolute inputDir may not exist here. Fall back to the show's folder on this machine.
+  let dir = run?.inputDir;
+  if (!dir || !fs.existsSync(dir)) {
+    const hit = discoverShows().find((s) => s.name === run?.show);
+    dir = hit ? path.resolve(REPO_ROOT, hit.id) : null;
+  }
+  if (!dir) return {};
   try {
-    const eps = loadShow(run.inputDir);
+    const eps = loadShow(dir);
     return Object.fromEntries(eps.map((e) => [e.number, Math.round(episodeDuration(e) * 100) / 100]));
   } catch {
     return {};

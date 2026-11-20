@@ -134,6 +134,7 @@ Schema changes are safe: ingestion is idempotent and never touches editor review
 | `/verify`: "could not start python3" | the image lost `python3`: rebuild from `mern/Dockerfile`, do not use a Node-only runtime |
 | `/verify`: cut audit fails "can't open file /app/tools/…" | `tools/` was not copied into the image (fixed in commit `35ac3c8`+, verify your branch) |
 | Build is slow / huge context | `.dockerignore` must be at the repo root; without it the build uploads `input_pack/` and `outputs/` |
+| A run lists clips but the storyboard is empty / `clip` returns 400 | the run was ingested on another machine, so its stored `input_dir` is a path that does not exist here. The API falls back to the show folder on this host; re-ingesting (`POST /api/sync`) rewrites the path too |
 
 ## Alternatives to Render
 

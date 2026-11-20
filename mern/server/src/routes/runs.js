@@ -60,6 +60,7 @@ runs.get("/runs/:run/promos", async (req, res, next) => {
 
     const rows = await Promo.find({ runName: run.name, near_duplicate: { $ne: true } }).sort({ rank: 1 }).lean();
     const dups = await Promo.find({ runName: run.name, near_duplicate: true }).lean();
+    const episodeSeconds = await episodeSecondsFor(run);
     const clean = (p) => {
       const { _id, __v, runName, near_duplicate, ...rest } = p;
       return rest;
@@ -71,9 +72,10 @@ runs.get("/runs/:run/promos", async (req, res, next) => {
       promos: rows.map(clean),
       near_duplicates: dups.map(clean),
       reviews: await reviewsMap(run.name),
-      episode_seconds: run.scriptsAvailable ? await episodeSecondsFor(run) : {},
+      episode_seconds: episodeSeconds,
       run: run.name,
-      scripts_available: Boolean(run.scriptsAvailable),
+      // Ask the disk, not the stored flag: the same database may be served from another host.
+      scripts_available: Object.keys(episodeSeconds).length > 0,
     });
   } catch (e) {
     next(e);
