@@ -1,0 +1,9 @@
+# --- MERN app ---
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+# --- the pipeline's own outputs (never committed, they quote Kuku's scripts) ---
+../outputs/

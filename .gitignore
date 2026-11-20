@@ -22,3 +22,5 @@ docs/solution*.html
 
 # scripts uploaded through the web UI (confidential, like input_pack/)
 uploads/
+
+.vscode/
