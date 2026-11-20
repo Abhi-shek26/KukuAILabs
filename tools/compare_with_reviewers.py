@@ -1,6 +1,6 @@
 """Agreement between the tool and independent reviewers who never saw the tool's output.
 
-Usage: python3 tools/compare_with_reviewers.py outputs/<run>/promos.json eval/independent_picks_haiku.json \
+Usage: python3 tools/compare_with_reviewers.py outputs/<run>/promos.json eval/independent_picks_reviewer_a.json \
            --show "input_pack/<show>" [--out eval/agreement.json]
 
 Measures

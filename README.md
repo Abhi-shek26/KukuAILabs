@@ -89,7 +89,7 @@ Qubrid AI was provided as the API, with the instruction to use **the cheapest mo
 3. **The judge read script labels as on-screen text.** It complained a character was "never named", but a viewer sees faces, not labels. Another one-line fix.
 
 ### Step 5: Full run, plus an independent yardstick
-While the free model worked through 50 episodes, I built an **independent reference**. Nine Claude Haiku reviewers, who never saw the tool's output, each read about 6 episodes and picked the best promo in each one. All 50 of their timestamps were checked against the script and were valid. I also added a **keyword-rules baseline** (no AI) and a **chance baseline**. Episodes are short and clips are long, so even a random clip overlaps the best moment surprisingly often, and that has to be measured.
+While the free model worked through 50 episodes, I built an **independent reference**. Nine reviewer sessions - a model from a different family, each an isolated agent that never saw the tool's output - read about 6 episodes each and picked the best promo in every one. All 50 of their timestamps were checked against the script and were valid. I also added a **keyword-rules baseline** (no AI) and a **chance baseline**. Episodes are short and clips are long, so even a random clip overlaps the best moment surprisingly often, and that has to be measured.
 
 ### Step 6: Hardening: reviews, audits and stress tests
 - **Code review by three AI reviewers** found 17 issues. The serious ones: a malformed model reply (a bare list, `Infinity`, prose around the JSON) could crash a run *after* all the API calls, and a network timeout on Python 3.9 escaped the retry loop. All were fixed, and an **offline test with a deliberately broken fake model** proves the run survives.
@@ -98,7 +98,7 @@ While the free model worked through 50 episodes, I built an **independent refere
 - I restarted the run on the fixed code. Every model reply is **cached on disk**, so nothing already paid for or waited for was lost.
 
 ### Step 7: A blind second opinion on every candidate
-All candidates were exported anonymously, shuffled, and reviewed by skeptical "ad-buyer" reviewers (Claude Haiku). They decided whether each clip passes the brief's three tests (hook in 3 s, cliffhanger, stands alone) and whether they would spend ad money on it. This showed two things:
+All candidates were exported anonymously, shuffled, and reviewed by skeptical "ad-buyer" reviewers (separate agent sessions on a model from a different family). They decided whether each clip passes the brief's three tests (hook in 3 s, cliffhanger, stands alone) and whether they would spend ad money on it. This showed two things:
 - **The ranking works.** Reviewers would post most of the top of the list and few from the bottom. Numbers are in [§5](#5-how-i-know-its-good-and-where-it-isnt).
 - **The weak spot is the opening.** Only about half of all candidates hook a stranger in the first 3 seconds, while 96% make sense on their own.
 
@@ -222,14 +222,14 @@ python3 -m promo_finder models                         # provider's models, chea
 
 ## 8. AI tools used, and where they got it wrong
 
-**Who did what.** Problem choice, scope, the provider and model choice, the testing budget, the frontend and its Kuku styling were my decisions. **Claude Code (Claude Opus 5.5)** was my pair programmer: it wrote and tested the code and ran the experiments with me. **Claude Haiku 5.5** acted as independent reviewers (picks, blind reviews, code review). **GLM-4.7-Flash** on Qubrid is the model inside the tool.
+**Who did what.** Problem choice, scope, the provider and model choice, the testing budget, the frontend and its Kuku styling were my decisions. **An agentic coding assistant** was my pair programmer: it wrote and tested the code and ran the experiments with me. **Separate agent sessions on a smaller model from a different family** acted as independent reviewers (picks, blind reviews, code review). **GLM-4.7-Flash** on Qubrid is the model inside the tool.
 
 **Where they got it wrong:**
 1. GLM made a 62.6 s clip of the best scene and, asked to fix it, returned the identical clip. Now code fixes lengths.
-2. The first judge prompt (drafted with Claude) penalised "melodrama" and "clichés", which is the genre's selling point. Fixed with one sentence.
-3. The first cut-snapping rule (written with Claude) could start a clip 0.2 s inside a line when two speakers overlap. An audit script caught it.
+2. The first judge prompt (drafted by the assistant) penalised "melodrama" and "clichés", which is the genre's selling point. Fixed with one sentence.
+3. The first cut-snapping rule (written by the assistant) could start a clip 0.2 s inside a line when two speakers overlap. An audit script caught it.
 4. AI code reviewers found that one malformed model reply could crash a run after all the API calls. Fixed and covered by an offline test.
-5. The re-cut prompt (written with Claude) was refused 148/149 times by Qwen's content filter. Rewording didn't help; the fallback model did.
+5. The re-cut prompt (written by the assistant) was refused 148/149 times by Qwen's content filter. Rewording didn't help; the fallback model did.
 
 ---
 

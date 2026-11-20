@@ -1,5 +1,5 @@
 """Validate independent reviewer picks against the script: do the timestamps exist, is the
-clip 20-60 s? Usage: python3 tools/check_reviewer_picks.py <show folder> eval/independent_picks_haiku.json"""
+clip 20-60 s? Usage: python3 tools/check_reviewer_picks.py <show folder> eval/independent_picks_reviewer_a.json"""
 import json
 import os
 import sys

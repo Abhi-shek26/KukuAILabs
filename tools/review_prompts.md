@@ -1,12 +1,12 @@
 # Reviewer prompts used in the evaluation
 
-The independent checks in the README were done by **Claude Haiku 5.5 reviewers** run from Claude Code. They are not a different human, but they are a different model family from the tool's model, and they never saw the tool's ranking. These are the exact instructions, so the checks can be re-run with any capable model or agent. Give each reviewer the files listed. The required output format is described at the end of each prompt.
+The independent checks in the README were done by **reviewer sessions: a model from a different family than the tool's, each run as its own isolated agent**. They are not a different human, but they are independent of the tool, and they never saw its ranking. These are the exact instructions, so every check can be re-run with any capable model or agent - give each reviewer the files listed. The required output format is described at the end of each prompt.
 
 ---
 
 ## A. Independent best-clip picks (recall check)
 
-One reviewer per batch of about 6 episodes. Output → `eval/independent_picks_haiku.json` as `{"picks": [...]}`. Then validate it with `python3 tools/check_reviewer_picks.py "<show folder>" eval/independent_picks_haiku.json`.
+One reviewer per batch of about 6 episodes. Output → `eval/independent_picks_reviewer_a.json` as `{"picks": [...]}`. Then validate it with `python3 tools/check_reviewer_picks.py "<show folder>" eval/independent_picks_reviewer_a.json`.
 
 ```
 You are an experienced promo editor for vertical microdrama apps (ReelShort / DramaBox style). You choose 20-60 second clips from episodes to run as paid ads on TikTok, Instagram Reels and YouTube Shorts.

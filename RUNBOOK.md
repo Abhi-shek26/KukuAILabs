@@ -4,7 +4,7 @@ Two toolchains, and only the second one needs installing:
 
 | Part | Needs | Used for |
 |---|---|---|
-| pipeline + CLI (`promo_finder/`, `tools/`) | Python 3.9+, standard library only — no installs | steps 1, 2, 4-9 |
+| pipeline + CLI (`promo_finder/`, `tools/`) | Python 3.9+, standard library only — no installs | steps 1, 2, 4-8 |
 | web app (`mern/`) | Node 20+, MongoDB, `npm install` (automatic) | step 3 |
 
 All commands run from the repo root. `<SHOW>` means the show folder, e.g. `input_pack/<show name>` (the confidential pack, not in git) or `examples/demo_show` (the demo included in the repo).
@@ -20,11 +20,10 @@ All commands run from the repo root. `<SHOW>` means the show folder, e.g. `input
 | Live demo at `https://promo-finder-mern.onrender.com` (Render free + keep-alive workflow) | ✅ running, **read-only** (`PROMO_READ_ONLY=1`): browsing, storyboard, ✓/✗ and CSV export work; uploads and new runs are refused |
 | Self-verification a stranger can run (`/verify`, `/api/selftest`) | ✅ 14 pass locally; 11 pass / 0 fail / 2 skip on the public deploy |
 | Official free-model run on the full pack (`outputs/full_run`, 155 candidates → 149 ranked, $0) | ✅ done. Its original live log is kept as `raw/llm_calls_live_run.jsonl`; the reports were regenerated from cache with the final code (identical clips and ranking) |
-| Paid-model comparison runs (Qwen3.5-Flash, DeepSeek-V4-Pro) and their blind reviews | ✅ done ($0.86 of a $4 test budget) |
+| Paid-model comparison runs (Qwen3.5-Flash, DeepSeek-V4-Pro) and their blind reviews | ✅ done ($0.86 of a $50 test budget) |
 | Evaluation: independent picks, blind review of every candidate, judge stability | ✅ done (`eval/`, kept private) |
 | README numbers | ✅ filled |
-| 2-page solution PDF | ✅ built locally as `docs/solution.pdf` (git-ignored because it quotes the scripts). **Edit it into your own words** (step 9 to rebuild) |
-| Submission (Drive upload of `outputs/full_run` + `eval/`, form, optional video) | ⏳ you: see `docs/SUBMISSION_CHECKLIST.md` |
+
 
 Re-running anything below is optional. Every step is reproducible with the commands given.
 
@@ -134,9 +133,8 @@ The reviewer instructions are in `tools/review_prompts.md`. Reviewers' outputs l
 
 **a) Recall: is the reviewer's best clip among the tool's candidates?**
 ```bash
-python3 tools/check_reviewer_picks.py "<SHOW>" eval/independent_picks_haiku.json      # validates the reviewer picks' timestamps
-python3 tools/compare_with_reviewers.py outputs/full_run/promos.json eval/independent_picks_haiku.json \
-        --show "<SHOW>" --out eval/agreement_tool.json
+python3 tools/check_reviewer_picks.py "<SHOW>" eval/independent_picks_reviewer_a.json      # validates the reviewer picks' timestamps
+python3 tools/compare_with_reviewers.py outputs/full_run/promos.json eval/independent_picks_reviewer_a.json \
 ```
 
 **b) Blind review of every candidate: does the ranking put the good clips on top?**
@@ -178,21 +176,11 @@ Fill the README's ⟦FREE_…⟧ markers (sections 1, 5 and 6) from that output,
 
 ---
 
-## 9. The 2-page solution PDF
 
-The doc quotes the scripts, so its source (`docs/solution_template.html` + `docs/solution_body_draft.html`) is **git-ignored** and stays on this computer. After filling in its `[[…]]` placeholders:
-```bash
-python3 -c "t=open('docs/solution_template.html').read(); b=open('docs/solution_body_draft.html').read(); open('docs/solution.html','w').write(t.replace('{{BODY}}', b))"
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --no-pdf-header-footer \
-        --print-to-pdf=docs/solution.pdf "file://$PWD/docs/solution.html"
-python3 -c "from pypdf import PdfReader; print(len(PdfReader('docs/solution.pdf').pages), 'pages')"   # must be ≤ 2
-# The PDF step above uses the macOS Chrome path; on Windows use, from the repo root:
-#   "C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu --no-pdf-header-footer --print-to-pdf=docs/solution.pdf "file:///C:/Users/HELLO/Desktop/Codings/Kuku-main/docs/solution.html"
-```
 
 ---
 
-## 10. Pushing updates
+## 9. Pushing updates
 
 ```bash
 git add -A && git status --short          # input_pack/, outputs/, eval/, uploads/, .env, docs/solution* must NOT appear
