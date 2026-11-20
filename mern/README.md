@@ -79,6 +79,34 @@ Identical surface to the Python UI, so both apps can be open side by side:
 | GET | `/verify` | **self-check page** — one button, PASS/FAIL table, JSON underneath |
 | GET | `/api/selftest?e2e=1` | the same checks as JSON (CI can assert `.ok`) |
 
+## What is public, and what is private
+
+The deployment and this repo are safe to share because neither contains Kuku's material:
+
+- **Public:** the code, `examples/demo_show` (an original 3-episode show written for this repo),
+  and one demo run the server seeds itself — `demo_show-rules`, 3 clips, rules-only, no API key,
+  $0. That is what `https://<your-app>/` serves.
+- **Private:** `input_pack/` (Kuku's 50-episode screenplay), `outputs/full_run` (the 149 ranked
+  clips), `eval/` and `.cache/` — all git-ignored and excluded by `.dockerignore`, so they are in
+  neither the repo nor the image.
+
+The ranked list quotes the screenplay — storyboard lines are verbatim dialogue and `promos.csv`
+quotes hooks and cliffhangers — so publishing it would redistribute Kuku's script. That is why it
+is delivered through the private folder named in the submission form (`outputs/full_run/report.html`,
+`promos.csv`, `promos.json`, `run_summary.json`) and not through the public URL.
+`docs/SUBMISSION_CHECKLIST.md` and `RUNBOOK.md` state the same rule for the Python app.
+
+This costs a reviewer nothing about the mechanics, which is what the deployment is for:
+
+| They can verify publicly | Where the full-dataset evidence lives |
+|---|---|
+| the pipeline really runs (parse → candidates → cuts → rank), in ~0.4 s | `outputs/full_run/report.html` — all 149 clips, hooks, cut points, judge scores |
+| clip → storyboard → ✓/✗ → CSV round-trip, persisted in MongoDB | `promos.csv` — the editor sheet for the real pack |
+| cuts land on block boundaries: `tools/audit_cuts.py` → 0 problems | `run_summary.json` — 209 calls, 620k/68k tokens, $0 |
+| their own show through **New run → upload** (any timestamped scripts) | `npm run parity` locally: 6/6 identical to the Python app, 149 storyboards, byte-identical CSV |
+
+In short: **mechanics public, results private** — the split the brief asks for.
+
 ## How a reviewer verifies a deployment
 
 Three layers, cheapest first. All of it works on the public deployment, with no API key and
