@@ -23,6 +23,7 @@ uploads.post("/upload", express.raw({ type: "*/*", limit: "60mb" }), (req, res, 
     const dest = path.join(REPO_ROOT, "uploads", slug(showName));
     fs.mkdirSync(dest, { recursive: true });
     let written = 0;
+    const skipped = new Map(); // extension -> count, so an empty result can explain itself
 
     const write = (base, content) => {
       let target = path.join(dest, safeName(base));
@@ -48,7 +49,15 @@ uploads.post("/upload", express.raw({ type: "*/*", limit: "60mb" }), (req, res, 
         const raw = entry.entryName.replace(/\\/g, "/");
         const base = raw.split("/").pop();
         if (entry.isDirectory || !base || base.startsWith(".") || raw.includes("__MACOSX")) continue;
-        if (!TEXT_EXT.includes(path.extname(base).toLowerCase()) || entry.header.size > MAX_FILE) continue;
+        const ext = (path.extname(base).toLowerCase() || "(no extension)").slice(0, 12);
+        if (!TEXT_EXT.includes(ext)) {
+          skipped.set(ext, (skipped.get(ext) || 0) + 1);
+          continue;
+        }
+        if (entry.header.size > MAX_FILE) {
+          skipped.set(`${ext} over 5 MB`, (skipped.get(`${ext} over 5 MB`) || 0) + 1);
+          continue;
+        }
         total += entry.header.size;
         if (total > MAX_UNZIPPED || written >= MAX_FILES) throw Object.assign(new Error("zip too large (max 100 MB of text, 2000 files)"), { status: 400 });
         write(base, entry.getData());
@@ -57,6 +66,15 @@ uploads.post("/upload", express.raw({ type: "*/*", limit: "60mb" }), (req, res, 
       write(path.basename(filename.replace(/\\/g, "/")), buf);
     } else {
       throw Object.assign(new Error("upload a .zip of episode scripts or .txt files"), { status: 400 });
+    }
+
+    // A zip full of PDFs/DOCX would otherwise look like success and fail later as "unknown show".
+    if (!written) {
+      const seen = [...skipped.entries()].slice(0, 4).map(([ext, n]) => `${n} × ${ext}`).join(", ");
+      throw Object.assign(
+        new Error(`no episode scripts in that file — this needs one timestamped .txt/.md/.fountain per episode${seen ? ` (ignored: ${seen})` : ""}`),
+        { status: 400 },
+      );
     }
 
     res.json({ show: path.posix.join("uploads", path.relative(path.join(REPO_ROOT, "uploads"), dest).split(path.sep).join("/")), written });
