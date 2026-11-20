@@ -1,0 +1,27 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    volumes: ["mongo-data:/data/db"]
+
+  app:
+    build:
+      context: ..
+      dockerfile: mern/Dockerfile
+    restart: unless-stopped
+    depends_on: [mongo]
+    ports: ["4000:4000"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/promo_finder
+      HOST: 0.0.0.0
+      PORT: "4000"
+      PROMO_SHOW_ROOTS: examples
+      # put your own provider settings here, or leave empty to paste a key in the UI
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://platform.qubrid.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-zai-org/GLM-4.7-Flash}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      PROMO_UI_REQUIRE_KEY: "0"
+
+volumes:
+  mongo-data:

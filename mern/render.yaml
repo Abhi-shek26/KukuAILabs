@@ -1,0 +1,25 @@
+# Render blueprint: one Docker web service + MongoDB Atlas (free M0) for data.
+# Push the repo, then in Render: New → Blueprint → this file.
+services:
+  - type: web
+    name: promo-finder-mern
+    runtime: docker
+    dockerfilePath: ./mern/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "4000"
+      - key: PROMO_SHOW_ROOTS
+        value: examples # the public demo show only — never Kuku's pack
+      - key: PROMO_UI_REQUIRE_KEY
+        value: "1" # visitors bring their own provider key
+      - key: MONGODB_URI
+        sync: false # paste the Atlas SRV string in the Render dashboard
+      - key: LLM_BASE_URL
+        value: https://platform.qubrid.com/v1
+      - key: LLM_MODEL
+        value: zai-org/GLM-4.7-Flash
