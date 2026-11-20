@@ -6,8 +6,9 @@
 #
 # GitHub's scheduler can drift a few minutes, hence every 10 minutes rather than 14.
 #
-# One-time setup: Settings → Secrets and variables → Actions → Variables →
-#   PROMO_APP_URL = https://promo-finder-mern.onrender.com      (no trailing slash)
+# No setup needed: the URL below is the deployed instance. To point it somewhere else, set a
+# repository variable PROMO_APP_URL (Settings → Secrets and variables → Actions → VARIABLES,
+# not Secrets) and it takes precedence.
 name: keepalive
 
 on:
@@ -28,11 +29,12 @@ jobs:
     steps:
       - name: GET /api/health
         env:
-          APP_URL: ${{ vars.PROMO_APP_URL }}
+          # vars.PROMO_APP_URL overrides this default when the variable is set
+          APP_URL: ${{ vars.PROMO_APP_URL || 'https://promo-finder-mern.onrender.com' }}
         run: |
           set -euo pipefail
           if [ -z "${APP_URL:-}" ]; then
-            echo "::error::Set the repository variable PROMO_APP_URL (Settings -> Secrets and variables -> Actions -> Variables)."
+            echo "::error::APP_URL is empty - set the repository variable PROMO_APP_URL, or fix the default in this file."
             exit 1
           fi
           start=$(date +%s%N)
