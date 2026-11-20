@@ -8,7 +8,9 @@ import { meta } from "./routes/meta.js";
 import { runs } from "./routes/runs.js";
 import { jobs } from "./routes/jobs.js";
 import { uploads } from "./routes/uploads.js";
+import { verify } from "./routes/verify.js";
 import { ingestAll } from "./services/ingest.js";
+import { ensureDemoRun } from "./services/demoSeed.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -20,6 +22,8 @@ app.use("/api", meta);
 app.use("/api", uploads);
 app.use("/api", jobs);
 app.use("/api", runs);
+app.use("/api", verify); // /api/selftest · /api/verify
+app.use(verify); // /verify — the page to send a reviewer
 
 app.use("/api", (_req, res) => res.status(404).json({ error: "not found" }));
 
@@ -40,6 +44,15 @@ const boot = async () => {
     await connectDb();
     const names = await ingestAll();
     console.log(`MongoDB connected · ${names.length} run(s) ingested: ${names.join(", ") || "none"}`);
+    // Empty deployment (no outputs/)? Give the reviewer something to look at.
+    if (process.env.PROMO_SEED_DEMO !== "0") {
+      try {
+        const seeded = await ensureDemoRun();
+        if (seeded) console.log(`Seeded a rules-only run of examples/demo_show as "${seeded}" (no API key, no cost)`);
+      } catch (e) {
+        console.error(`Could not seed the demo run: ${e.message}`);
+      }
+    }
   } catch (e) {
     console.error(`MongoDB not reachable: ${e.message}`);
     console.error("Start it (mongod) or set MONGODB_URI, then restart. The API stays up and will error on data routes.");
