@@ -12,6 +12,9 @@ the Top-10 rail and the phone-frame storyboard render identically.
 ```
 mern/
   server/            Express + Mongoose API  (port 4000)
+    src/services/selftest.js   the /api/selftest checks (see "How a reviewer verifies")
+    src/routes/verify.js       /verify — the page to send a reviewer
+  scripts/parity.mjs           MERN vs Python, endpoint by endpoint
     src/models/      Run · Promo · Review · Job
     src/routes/      meta (config/shows/models/parse) · runs · jobs · uploads
     src/services/    ingest (outputs/ → MongoDB) · clip (storyboard) · csv · jobRunner
@@ -49,6 +52,11 @@ npm start                    # http://127.0.0.1:4000
 `npm run seed` (or `POST /api/sync`) re-scans `outputs/` and loads every run into MongoDB.
 That happens automatically on boot, so an existing `outputs/full_run` shows up immediately.
 
+If the database is empty and there is no `outputs/` at all — a fresh clone or a container —
+the server seeds **one run itself**: `demo_show-rules`, a rules-only pass over the bundled
+`examples/demo_show` (3 clips, ~0.5 s, no API key, no cost). That is what makes a public
+deployment clickable on first load. Disable it with `PROMO_SEED_DEMO=0`.
+
 ## API
 
 Identical surface to the Python UI, so both apps can be open side by side:
@@ -68,6 +76,68 @@ Identical surface to the Python UI, so both apps can be open side by side:
 | POST | `/api/run` | start a pipeline run → `Job` document |
 | GET | `/api/job` · POST `/api/job/cancel` | live progress · cancel |
 | POST | `/api/upload?show=&filename=` | zip or .txt upload, untrusted-input rules kept |
+| GET | `/verify` | **self-check page** — one button, PASS/FAIL table, JSON underneath |
+| GET | `/api/selftest?e2e=1` | the same checks as JSON (CI can assert `.ok`) |
+
+## How a reviewer verifies a deployment
+
+Three layers, cheapest first. All of it works on the public deployment, with no API key and
+no access to Kuku's script.
+
+**1. One click — `https://<your-app>/verify`**
+
+The page runs `/api/selftest`: 14 assertions in about 1.5 s, each with a reason string. It is
+not a mock — it executes the real pipeline once on the bundled demo show (rules-only, zero
+provider calls) and then drives the result through the same HTTP routes the UI uses:
+
+| # | Check | What it proves |
+|---|---|---|
+| 1-2 | MongoDB connected · documents present | data layer is live, not stubbed |
+| 3-5 | `/api/health`, `/api/config`, `/api/shows` | the API and its config endpoints answer |
+| 6 | parser totals for the demo show (3 eps · 76 blocks · 2.0 min · 0 warnings) | the Node screenplay parser is right, not just plausible |
+| 7 | parser totals for the 50-episode pack | *skipped* publicly (input_pack/ is private); passes locally |
+| 8 | `python -m promo_finder run` → a ranked shortlist | the Python pipeline really runs inside the deployed app |
+| 9 | `tools/audit_cuts.py` → 0 problems | cuts are on block boundaries, 20-60 s, in story order |
+| 10 | the run is ingested and served by `/api/runs/:run/promos` | `outputs/` → MongoDB → API |
+| 11 | a clip's storyboard ends where the clip ends | storyboard is derived from the script, not fabricated |
+| 12 | ✓ Post → appears in the CSV → cleared → CSV identical | review persistence round-trip |
+| 13-14 | `full_run`: 149 clips, ranks 1..149, 6 near-dups · CSV 149 rows / 17 columns | the submitted artifact is intact |
+
+Checks 7, 13 and 14 report **skipped** when `input_pack/` or `outputs/full_run/` are absent —
+which is exactly what a public deployment should look like. `ok` is false only on a real
+failure.
+
+**2. In CI or a terminal — same thing, machine-readable**
+
+```bash
+curl -s https://<your-app>/api/selftest | jq '.ok, .summary'
+# true
+# { "pass": 11, "fail": 0, "skip": 2, "total": 13 }
+```
+
+**3. By hand, in the UI (2 minutes)**
+
+1. Open `/` — the run picker lists the runs of this deployment: `demo_show-rules` (3 clips,
+   seeded at boot) on a public deploy, `full_run` (149 clips) on the owner's machine. Pick a
+   clip to see the phone-frame storyboard with the first 3 s highlighted.
+2. Filter by kind/verdict/judge-pick, sort by score — counts move.
+3. Press ✓ on a clip → reload the page → it is still ✓ (it is in MongoDB, not localStorage).
+4. **Export** → the CSV has a new `editor_verdict=post` column value; press ✗ → it changes.
+5. **New run** → pick `demo_show` → tick *rules only* → Start: progress walks
+   parse → mine → trailers → rank and the new run appears in the picker. Untick it and paste
+   your own provider key to run the LLM path (that is the only part that costs money).
+6. `/api/runs/<run>/file/report.html` — the same HTML report the CLI writes.
+
+**Owner-only: byte-for-byte parity with the original app**
+
+```bash
+python -m promo_finder serve --port 8765     # terminal 1
+cd mern && npm run dev:server                # terminal 2
+cd mern && npm run parity                    # terminal 3
+```
+
+`npm run parity` compares both apps on every show: parse payloads, all 149 clips field by
+field, all 149 storyboards, and the exported CSV bytes. It exits non-zero on any difference.
 
 ## What was verified
 
@@ -80,6 +150,9 @@ Identical surface to the Python UI, so both apps can be open side by side:
 | DOM parity, main page | every probed element matches on width/height/font/colour/radius/padding; 61 posters, 10 rail items |
 | DOM parity, storyboard dialog | same 35 lines, same tag chips, same meters, same column width |
 | End-to-end run from the UI | `POST /api/run` → Python → `Job` progress → MongoDB → served back (rules mode, demo show) |
+| `npm run parity` (MERN vs Python) | **6/6**: shows, both parse payloads, 149 clips, 149 storyboards, CSV bytes |
+| `/api/selftest` locally | **14 pass · 0 fail · 0 skip** in 1.4 s |
+| `/api/selftest` as a public deploy would see it (fresh DB, `examples/` only, key required) | **11 pass · 0 fail · 2 skip** in 0.9 s, and boots with the `demo_show-rules` run ready to browse |
 
 ## Deploy
 
