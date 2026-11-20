@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { OUTPUTS_DIR, REPO_ROOT } from "../env.js";
+import { MONGODB_URI, OUTPUTS_DIR, REPO_ROOT } from "../env.js";
 import { Run, Promo, Review } from "../models/index.js";
 import { discoverShows, showDirFor } from "./shows.js";
 import { episodeDuration, loadShow } from "../lib/screenplay.js";
@@ -120,8 +120,25 @@ export async function ingestRunDir(dir) {
   return doc;
 }
 
+// A remote database (Atlas) is the one a public deployment reads from. A laptop must therefore
+// never push its local outputs/ into it: those folders can hold client material (the Kuku pack),
+// and every clip stores the hook, cliffhanger and script lines verbatim. Opt in explicitly with
+// PROMO_INGEST_ALL=1 when you really do mean to publish a run.
+const REMOTE_DB = /^mongodb\+srv:/.test(MONGODB_URI);
+
 export async function ingestAll() {
   if (!fs.existsSync(OUTPUTS_DIR)) return [];
+  if (REMOTE_DB && process.env.PROMO_INGEST_ALL !== "1") {
+    const remote = MONGODB_URI.replace(/\/\/[^@]*@/, "//").split("?")[0];
+    console.warn(
+      [
+        `outputs/ not ingested: ${remote} is a remote database.`,
+        "  Keeping local runs out of it is deliberate — set PROMO_INGEST_ALL=1 to override,",
+        "  or use a local MONGODB_URI (mongodb://127.0.0.1:27017/promo_finder).",
+      ].join("\n"),
+    );
+    return [];
+  }
   const dirs = fs
     .readdirSync(OUTPUTS_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory() && !e.name.startsWith("."))
