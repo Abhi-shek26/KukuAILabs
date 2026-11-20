@@ -18,6 +18,8 @@ WORKDIR /app
 # the pipeline (stdlib only) and the original demo show — never the confidential pack
 COPY promo_finder ./promo_finder
 COPY examples ./examples
+# the audit scripts that /api/selftest runs (code only, no data)
+COPY tools ./tools
 COPY mern/server ./mern/server
 COPY --from=client /app/mern/client/dist ./mern/client/dist
 

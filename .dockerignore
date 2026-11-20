@@ -1,0 +1,19 @@
+# Build context = repo root (the image needs promo_finder/ + examples/).
+# Everything Kuku-specific stays out of the context AND out of the image.
+input_pack/
+outputs/
+uploads/
+.cache/
+.env
+.env.local
+*.zip
+docs/solution*.html
+
+# never needed in an image
+.git/
+.vscode/
+**/node_modules/
+mern/client/dist/
+__pycache__/
+*.pyc
+.DS_Store
