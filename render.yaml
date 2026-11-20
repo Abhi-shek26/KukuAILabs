@@ -1,22 +1,25 @@
 # Render blueprint: one Docker web service + MongoDB Atlas (free M0) for data.
 # Push the repo, then in Render: New → Blueprint → this file.
+#
+# Do NOT set PORT here: Render injects its own and routes to it. The server reads
+# process.env.PORT, so leaving it alone is what makes the health check pass.
 services:
   - type: web
     name: promo-finder-mern
     runtime: docker
     dockerfilePath: ./mern/Dockerfile
-    dockerContext: .
+    dockerContext: .   # the image needs promo_finder/ + examples/ + tools/
     plan: free
     healthCheckPath: /api/health
     envVars:
       - key: HOST
         value: 0.0.0.0
-      - key: PORT
-        value: "4000"
       - key: PROMO_SHOW_ROOTS
         value: examples # the public demo show only — never Kuku's pack
       - key: PROMO_UI_REQUIRE_KEY
         value: "1" # visitors bring their own provider key
+      - key: PROMO_SEED_DEMO
+        value: "1" # seed one rules-only demo run so / is not blank
       - key: MONGODB_URI
         sync: false # paste the Atlas SRV string in the Render dashboard
       - key: LLM_BASE_URL

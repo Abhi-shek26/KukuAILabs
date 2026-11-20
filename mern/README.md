@@ -153,24 +153,33 @@ field, all 149 storyboards, and the exported CSV bytes. It exits non-zero on any
 | `npm run parity` (MERN vs Python) | **6/6**: shows, both parse payloads, 149 clips, 149 storyboards, CSV bytes |
 | `/api/selftest` locally | **14 pass · 0 fail · 0 skip** in 1.4 s |
 | `/api/selftest` as a public deploy would see it (fresh DB, `examples/` only, key required) | **11 pass · 0 fail · 2 skip** in 0.9 s, and boots with the `demo_show-rules` run ready to browse |
+| The Docker image, built and run locally (`docker build -f mern/Dockerfile .`) | same **11 pass · 0 fail · 2 skip** inside the container, storyboard served from MongoDB after a restart, and `/app` free of Kuku's material |
 
 ## Deploy
 
-The brief accepts “a GitHub repo with clear run steps”, which this is. If you also want a live
-URL, prefer a container host (Render/Railway/Hugging Face Spaces) + MongoDB Atlas free tier,
-because the app shells out to Python:
+**Step-by-step guide: [DEPLOY.md](DEPLOY.md)** — MongoDB Atlas M0 + Render blueprint, env var
+table, verification checklist, free-tier caveats, rollback and troubleshooting.
 
 ```bash
-# local, everything in containers
-docker compose up --build          # app on :4000, MongoDB included
+# locally, everything in containers (app on :4000, MongoDB included)
+docker compose -f mern/docker-compose.yml up --build
+
+# or just the app, against a database you already have
+docker build -f mern/Dockerfile -t promo-finder .
+docker run -p 4000:4000 -e MONGODB_URI="mongodb://host.docker.internal:27017/promo_finder" promo-finder
 ```
 
-`render.yaml` deploys the same Dockerfile on Render (set `MONGODB_URI` to an Atlas string and
-`LLM_API_KEY` to your own key, or set `PROMO_UI_REQUIRE_KEY=1` and let visitors paste theirs).
+The image is built from the repo root (`promo_finder/`, `tools/`, `examples/`, `mern/`) because
+the API shells out to the Python pipeline. `./render.yaml` is the Render blueprint; it builds
+the same Dockerfile with `PROMO_UI_REQUIRE_KEY=1` so visitors bring their own provider key.
 
-**Never deploy Kuku's pack.** The image copies only `promo_finder/`, `examples/` and `mern/`,
-so the public demo runs on the original `examples/demo_show`; `input_pack/`, `outputs/` and
-`.env` stay out of both git and the image.
+**Never deploy Kuku's pack.** `.dockerignore` keeps `input_pack/`, `outputs/`, `uploads/`,
+`docs/solution*` and `.env` out of the build context, so a public deployment can't contain
+them. Verify any time with:
+
+```bash
+docker run --rm promo-finder ls /app     # examples  mern  outputs  promo_finder  tools
+```
 
 ## Notes
 
