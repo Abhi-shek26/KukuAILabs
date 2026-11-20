@@ -51,12 +51,21 @@ python3 -u -m promo_finder run "<SHOW>" --out outputs/full_run
 
 ## 3. Web app
 
+The web app is the MERN one in `mern/` (React + Express + MongoDB). It runs this same pipeline
+and needs nothing from the CLI beyond the scripts.
+
 ```bash
-python3 -m promo_finder serve --open          # http://127.0.0.1:8765
+npm run app                   # from the repo root: deps, MongoDB check, API :4000, UI :5173
 ```
-- **Promos** tab: pick a run from the top-right menu. **New run** tab: pick or upload a show, choose models, press *Find promos*. **How it works**: the explainer.
-- Runs started in the web app land in `outputs/<show>-<model>-<time>/`. Runs started from the terminal show up in the web app too.
-- Hosting it for others: `PROMO_UI_REQUIRE_KEY=1 python3 -m promo_finder serve --host 0.0.0.0 --port 8765`. Every visitor then has to bring their own API key. Never host it with the confidential scripts or outputs on the machine.
+It creates `mern/.env` from `.env.example` on first run (set `MONGODB_URI` there; the provider key
+is read from the repo-root `.env`), installs dependencies once, refuses to start if MongoDB is not
+answering, and opens the browser. `npm run app -- --no-open` skips the browser; Ctrl+C stops both.
+- **Promos** tab: pick a run. **New run** tab: pick or upload a show, choose models, press *Find promos*.
+- Runs land in `outputs/<show>-<model>-<time>/` and are ingested into MongoDB; CLI runs appear after `npm run sync`.
+- Hosting, environment variables and the free-tier caveats: `mern/DEPLOY.md`. Never host it with the confidential scripts or outputs inside the image.
+- Any hosted copy should run with `PROMO_READ_ONLY=1` (what `render.yaml` sets): the public demo then serves
+  finished runs, storyboards, reviews and CSV export, but refuses uploads and new runs — one shared database
+  has no accounts, so a visitor's scripts would otherwise be visible to everyone. Locally the flag is off.
 
 ---
 

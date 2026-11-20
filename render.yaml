@@ -18,6 +18,9 @@ services:
         value: examples,uploads # demo show + whatever a visitor uploads — never Kuku's pack
       - key: PROMO_UI_REQUIRE_KEY
         value: "1" # visitors bring their own provider key
+      - key: PROMO_READ_ONLY
+        value: "1" # no uploads or runs on the public demo: one shared database has no accounts,
+        #            so a visitor's material would be visible to every other visitor
       - key: PROMO_SEED_DEMO
         value: "1" # seed one rules-only demo run so / is not blank
       - key: MONGODB_URI

@@ -1,5 +1,5 @@
 import express from "express";
-import { DEFAULT_BASE_URL, DEFAULT_MODEL, REQUIRE_USER_KEY, SERVER_API_KEY } from "../env.js";
+import { DEFAULT_BASE_URL, DEFAULT_MODEL, READ_ONLY, REQUIRE_USER_KEY, SERVER_API_KEY } from "../env.js";
 import { Run } from "../models/index.js";
 import { discoverShows, resolveShow } from "../services/shows.js";
 import { parseSummary } from "../lib/screenplay.js";
@@ -19,6 +19,8 @@ meta.get("/config", async (_req, res) => {
     require_user_key: REQUIRE_USER_KEY,
     active_runs: active,
     stack: "MERN",
+    read_only: READ_ONLY,
+    can_run: !READ_ONLY, // the UI hides "New run" when this is false
   });
 });
 

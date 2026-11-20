@@ -167,6 +167,7 @@ export default function App() {
           openRun(name);
         }}
         onJobPill={() => changeTab("new")}
+        config={config}
       />
 
       <main>
@@ -192,6 +193,16 @@ export default function App() {
         </section>
 
         <section style={{ display: tab === "new" ? "block" : "none" }}>
+          {config?.can_run === false ? (
+            <div className="empty" style={{ padding: "48px 24px" }}>
+              <b>This deployment is a read-only demo.</b>
+              <p style={{ marginTop: 10 }}>
+                It shows finished runs and lets you review them (✓ post / ✗ skip) and export the CSV. Uploading a
+                show and finding promos needs the app running on your own machine, where your files stay yours:
+              </p>
+              <pre style={{ marginTop: 12 }}>{["git clone <this repo>", "cd Kuku-main", "npm run app"].join("\n")}</pre>
+            </div>
+          ) : (
           <NewRun
             config={config}
             job={job}
@@ -205,6 +216,7 @@ export default function App() {
             }}
             onToast={showToast}
           />
+          )}
         </section>
 
         <section style={{ display: tab === "how" ? "block" : "none" }}>

@@ -1,7 +1,9 @@
 import { PlayIcon } from "../lib/ui.jsx";
 
 // Header: brand, tabs, run picker, live-job pill, export. Same classes as the Python UI.
-export default function TopBar({ tab, setTab, runs, run, onPickRun, data, job, onJobPill }) {
+export default function TopBar({ tab, setTab, runs, run, onPickRun, data, job, onJobPill, config }) {
+  // A hosted demo is read-only (one shared database, no accounts), so the tab is not offered.
+  const canRun = config?.can_run !== false;
   return (
     <header className="top">
       <div className="brand">
@@ -16,7 +18,7 @@ export default function TopBar({ tab, setTab, runs, run, onPickRun, data, job, o
       <nav className="nav">
         {[
           ["promos", "Promos"],
-          ["new", "New run"],
+          ...(canRun ? [["new", "New run"]] : []),
           ["how", "How it works"],
         ].map(([k, label]) => (
           <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>

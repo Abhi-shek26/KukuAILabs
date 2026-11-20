@@ -2,11 +2,12 @@
 
 **Kuku AI Generalist assignment · Problem 1: "Find the Promos"**
 
-Promo Finder reads the timestamped screenplays of a microdrama and returns a **ranked shortlist of 20–60 second promo clips**. For each clip you get the episode, the exact start and end of every segment, the hook in the first 3 seconds, the cliffhanger it cuts on, why it works, and why it sits at that rank. It comes as a **command-line tool** and as a **web app styled like Kuku's own product**, where an editor can review every clip (✓ post / ✗ skip) and export the list for the edit.
+Promo Finder reads the timestamped screenplays of a microdrama and returns a **ranked shortlist of 20–60 second promo clips**. For each clip you get the episode, the exact start and end of every segment, the hook in the first 3 seconds, the cliffhanger it cuts on, why it works, and why it sits at that rank. It comes as a **command-line tool** and as a **web app styled like Kuku's own product**
+(React + Express + MongoDB — see [mern/](mern/README.md)), where an editor can review every clip (✓ post / ✗ skip) and export the list for the edit.
 
 ```bash
-python3 -m promo_finder serve                                   # web app → http://127.0.0.1:8765
-python3 -m promo_finder run "input_pack/<show folder>"          # same thing from the terminal
+npm run app                                                    # web app → http://localhost:5173
+python3 -m promo_finder run "input_pack/<show folder>"          # same pipeline from the terminal
 python3 -m promo_finder run examples/demo_show --no-llm         # try it now on the included demo show, no API key
 ```
 
@@ -187,10 +188,11 @@ Same pipeline, same show; only `--model` changed:
 
 ## 7. Using it
 
-### Web app
+### Web app (`mern/`)
 ```bash
-python3 -m promo_finder serve            # http://127.0.0.1:8765  (add --open to launch the browser)
+cd mern && npm run install:all && npm run dev     # API :4000, UI :5173
 ```
+Setup, the API reference, the self-test page and the deployed demo: **[mern/README.md](mern/README.md)**.
 - **New run:** pick a show folder on this computer or upload a `.zip` / `.txt` scripts. You see the episode count, runtime and any format warnings straight away. Choose the provider, model, judge model, fallback, parallel requests and budget cap, then press **Find promos**. Progress is live per step, along with calls, cache hits and money spent, and you can cancel.
 - **Promos:** the hero banner, the Top 10 row, trailers and every clip as a poster, with search and filters (type, review state, judge picks, no warnings). Click a poster for the storyboard, the timestamps (⧉ copy), the judge's scores and the review buttons. **⬇ Export** downloads the CSV with your ✓/✗ and notes.
 - Links like `#run=<run>&promo=<id>` open one specific promo, which is handy to share with an editor.
@@ -242,6 +244,14 @@ python3 -m promo_finder models                         # provider's models, chea
 
 **Limits:** see "Where it picks badly" above. The free tier is slow (one request at a time). The judge is a small model and is noisy, so treat the output as a **shortlist for an editor**.
 
+**What the hosted demo does and does not do**
+- The deployment at `https://promo-finder-mern.onrender.com` is a **read-only demo**: finished runs, the
+  storyboard, ✓/✗ reviews and the CSV export all work, but uploading a show and running the pipeline are
+  refused (`PROMO_READ_ONLY=1`). Uploading needs the app on your own machine — `npm run app` — where your
+  files stay yours.
+- Why: a hosted database has no accounts, so one visitor's upload would be visible to all of them. Clone,
+  run locally, and your scripts, your `uploads/` and your `outputs/` never leave your computer.
+
 **Safety and confidentiality**
 - The input pack, outputs, evaluation files, uploads and `.env` are **git-ignored**. The scripts are Kuku's confidential content, and the outputs quote them.
 - The web app binds to `127.0.0.1` by default.
@@ -263,9 +273,8 @@ promo_finder/
   llm.py          OpenAI-compatible client: cache, retries, refusals → fallback, budget cap, cancel
   runner.py       model setup shared by CLI and web app
   report.py       promos.md / promos.csv / promos.json / report.html
-  server.py       web app backend (standard library http.server)
-  web/index.html  web app frontend (single file, no build step)
-  __main__.py     CLI: run · serve · parse · models
+  __main__.py     CLI: run · parse · models
+mern/             the web app: Express API + React UI, on this pipeline (see mern/README.md)
 tools/            audits, robustness tests, evaluation scripts (all offline except judge_stability);
                   review_prompts.md = exact instructions given to the independent AI reviewers
 RUNBOOK.md        how to run every step (main run, web app, checks, evaluations, PDF), and what's pending

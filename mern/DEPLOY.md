@@ -77,6 +77,15 @@ and rules-only runs need no key at all.
 
 Do **not** set `PORT` — Render injects its own and the server binds to it.
 
+`PROMO_READ_ONLY=1` is set by `render.yaml` and should stay: a hosted database has no accounts, so
+without it any visitor could upload scripts, run the pipeline, and see everyone else's runs (and their
+quoted dialogue). Read-only keeps `/verify`, the storyboard, ✓/✗ and the CSV export fully usable while
+refusing `/api/upload`, `/api/run` and `/api/sync`. Set it to `0` only on a private instance.
+
+Keep the production `MONGODB_URI` **only** in Render. If your laptop's `mern/.env` points at the
+same cluster, the server refuses to ingest the local `outputs/` (which can contain Kuku's clips)
+unless `PROMO_INGEST_ALL=1` — that is the guard that stops client material reaching a public URL.
+
 ### First boot
 
 ```
@@ -101,8 +110,8 @@ The two **skipped** checks are the ones needing `input_pack/` (Kuku's script) an
 `outputs/full_run/` (the submitted 149 clips). They pass on your machine, never in public —
 that is the intended behaviour, not a failure.
 
-Reference numbers when you run it locally against the real run:
-`npm run parity` → 6/6 identical to the Python app; `/api/selftest` → 14 pass / 0 fail.
+Reference numbers when you run it locally against the real run: `/api/selftest` → 14 pass /
+0 fail, and `npm run sync` ingests `outputs/full_run` as 149 clips.
 
 ## Keeping a free instance warm
 

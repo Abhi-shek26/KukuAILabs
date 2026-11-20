@@ -33,6 +33,11 @@ export const SHOW_ROOTS = (process.env.PROMO_SHOW_ROOTS || "input_pack,uploads,e
 export const TEXT_EXT = [".txt", ".md", ".fountain"];
 export const PYTHON_BIN = process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3");
 export const REQUIRE_USER_KEY = process.env.PROMO_UI_REQUIRE_KEY === "1";
+// A hosted demo has no accounts: every run lands in one shared database, so one visitor's upload
+// would be visible to all of them (and the API would let anyone start a run on their scripts).
+// PROMO_READ_ONLY=1 closes that: uploading, running and re-syncing are refused, while reading,
+// reviewing and exporting keep working — a reviewer can still check the whole review loop.
+export const READ_ONLY = process.env.PROMO_READ_ONLY === "1";
 export const DEFAULT_BASE_URL = (process.env.LLM_BASE_URL || "https://platform.qubrid.com/v1").replace(/\/+$/, "");
 export const DEFAULT_MODEL = process.env.LLM_MODEL || "zai-org/GLM-4.7-Flash";
 export const SERVER_API_KEY = process.env.LLM_API_KEY || process.env.QUBRID_API_KEY || "";

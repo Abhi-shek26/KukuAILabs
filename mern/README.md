@@ -5,7 +5,8 @@ The same Promo Finder UI and the same pipeline, rebuilt as a real MERN applicati
 **React** (Vite) front end · **Node** spawning the Python pipeline as the one source of truth
 for parsing, prompting, judging and ranking.
 
-The look is not a redesign: `client/src/styles.css` is the Python UI's stylesheet copied
+The look is not a redesign: `client/src/styles.css` is the original single-file UI's stylesheet,
+ copied
 verbatim, and every component keeps the same class names, so colours, posters, gradients,
 the Top-10 rail and the phone-frame storyboard render identically.
 
@@ -14,14 +15,13 @@ mern/
   server/            Express + Mongoose API  (port 4000)
     src/services/selftest.js   the /api/selftest checks (see "How a reviewer verifies")
     src/routes/verify.js       /verify — the page to send a reviewer
-  scripts/parity.mjs           MERN vs Python, endpoint by endpoint
     src/models/      Run · Promo · Review · Job
     src/routes/      meta (config/shows/models/parse) · runs · jobs · uploads
     src/services/    ingest (outputs/ → MongoDB) · clip (storyboard) · csv · jobRunner
     src/lib/         screenplay.js — a port of promo_finder/screenplay.py
   client/            React 18 + Vite  (port 5173, proxies /api)
     src/components/  TopBar · PromosTab · Poster · PromoDialog · NewRun · ProgressCard
-    src/styles.css   the Python UI's stylesheet, verbatim
+    src/styles.css   the original UI's stylesheet, verbatim
 ```
 
 ## Why the pipeline stays Python
@@ -37,12 +37,14 @@ only to build the storyboard quickly without a round-trip to Python.
 ## Run it
 
 ```bash
-# 0. MongoDB must be up (service, docker, or Atlas) and Python 3.9+ on PATH
-cd mern
-npm run install:all          # server + client deps
+# 0. one command, from the repo root: deps (once), MongoDB check, API + UI, browser opened
+npm run app                  # → http://localhost:5173
+npm run app -- --no-open     # same, without opening the browser
+# already running in another terminal? it reuses that, or explains which port is taken.
 
-# 1. development: API on :4000, React dev server on :5173
-npm run dev                  # open http://127.0.0.1:5173
+# or step by step, from mern/
+npm run install:all          # server + client deps
+npm run dev                  # API :4000, React dev server :5173
 
 # 2. production-ish: build the client, serve everything from Express
 npm run build
@@ -59,7 +61,7 @@ deployment clickable on first load. Disable it with `PROMO_SEED_DEMO=0`.
 
 ## API
 
-Identical surface to the Python UI, so both apps can be open side by side:
+The surface the original single-file UI had, kept identical route for route:
 
 | Method | Route | What it does |
 |---|---|---|
@@ -89,6 +91,15 @@ The deployment and this repo are safe to share because neither contains Kuku's m
 - **Private:** `input_pack/` (Kuku's 50-episode screenplay), `outputs/full_run` (the 149 ranked
   clips), `eval/` and `.cache/` — all git-ignored and excluded by `.dockerignore`, so they are in
   neither the repo nor the image.
+- **The deployed app is read-only** (`PROMO_READ_ONLY=1` in `render.yaml`): `/api/upload`, `/api/run`
+  and `/api/sync` answer `403`, and the UI hides the **New run** tab with a note explaining how to run
+  it locally. Reading, reviewing and exporting keep working, so a reviewer still exercises the whole
+  review loop. Without this guard a public deployment is shared tenancy by accident — every visitor
+  would see (and could run) every other visitor's upload.
+- **The public database** holds only runs made from `examples/demo_show`. Two things keep it that way: the deployment ships no `outputs/` and no
+  `input_pack/` to ingest, and `ingestAll()` refuses to load local `outputs/` into a remote
+  (`mongodb+srv`) database unless `PROMO_INGEST_ALL=1` is set explicitly. A laptop therefore
+  cannot publish Kuku's clips by pointing its `.env` at Atlas.
 
 The ranked list quotes the screenplay — storyboard lines are verbatim dialogue and `promos.csv`
 quotes hooks and cliffhangers — so publishing it would redistribute Kuku's script. That is why it
@@ -103,7 +114,7 @@ This costs a reviewer nothing about the mechanics, which is what the deployment 
 | the pipeline really runs (parse → candidates → cuts → rank), in ~0.4 s | `outputs/full_run/report.html` — all 149 clips, hooks, cut points, judge scores |
 | clip → storyboard → ✓/✗ → CSV round-trip, persisted in MongoDB | `promos.csv` — the editor sheet for the real pack |
 | cuts land on block boundaries: `tools/audit_cuts.py` → 0 problems | `run_summary.json` — 209 calls, 620k/68k tokens, $0 |
-| their own show through **New run → upload** (any timestamped scripts) | `npm run parity` locally: 6/6 identical to the Python app, 149 storyboards, byte-identical CSV |
+| their own show through **New run → upload** (any timestamped scripts) | the same show through `python -m promo_finder run`, compared clip by clip against the run in MongoDB |
 
 In short: **mechanics public, results private** — the split the brief asks for.
 
@@ -156,33 +167,46 @@ curl -s https://<your-app>/api/selftest | jq '.ok, .summary'
    your own provider key to run the LLM path (that is the only part that costs money).
 6. `/api/runs/<run>/file/report.html` — the same HTML report the CLI writes.
 
-**Owner-only: byte-for-byte parity with the original app**
+**Owner-only: the app agrees with the pipeline, byte for byte**
+
+There is no second server to diff against any more. The pipeline's own artifacts are the
+reference — `python -m promo_finder run` writes `outputs/<run>/promos.csv`, and the app's
+export is expected to reproduce it byte for byte for the same clips and reviews:
 
 ```bash
-python -m promo_finder serve --port 8765     # terminal 1
-cd mern && npm run dev:server                # terminal 2
-cd mern && npm run parity                    # terminal 3
+python -m promo_finder run examples/demo_show --no-llm --out outputs/demo_check   # terminal 1
+cd mern && npm run sync && npm run dev:server                                    # terminal 2
+curl -s localhost:4000/api/runs/demo_check/export.csv   | cmp - ../outputs/demo_check/promos.csv                                       # terminal 3
 ```
 
-`npm run parity` compares both apps on every show: parse payloads, all 149 clips field by
-field, all 149 storyboards, and the exported CSV bytes. It exits non-zero on any difference.
+The same comparison held for the real run: `outputs/full_run/promos.csv`, **72,015 bytes**,
+came back identical from `GET /api/runs/full_run/export.csv`.
 
 ## What was verified
+
+You can re-run these today:
 
 | Check | Result |
 |---|---|
 | Node screenplay parser vs `python -m promo_finder parse` | **identical** on the demo show and on all 50 episodes of the real pack (3,727 blocks, 102.7 min) |
-| `/api/runs/full_run/promos` vs the Python API | 149/149 clips, 0 field mismatches, same segments, judge and summary |
-| Storyboard for `E24-P1` | identical payload: 35 lines, 8 “after the cut” |
-| `export.csv` | **byte-identical**, 72,015 bytes |
-| DOM parity, main page | every probed element matches on width/height/font/colour/radius/padding; 61 posters, 10 rail items |
-| DOM parity, storyboard dialog | same 35 lines, same tag chips, same meters, same column width |
+| `export.csv` vs the pipeline's `promos.csv` | **byte-identical**, 72,015 bytes on the 149-clip run |
 | End-to-end run from the UI | `POST /api/run` → Python → `Job` progress → MongoDB → served back (rules mode, demo show) |
-| `npm run parity` (MERN vs Python) | **6/6**: shows, both parse payloads, 149 clips, 149 storyboards, CSV bytes |
 | `/api/selftest` locally | **14 pass · 0 fail · 0 skip** in 1.4 s |
 | `/api/selftest` as a public deploy would see it (fresh DB, `examples/` only, key required) | **11 pass · 0 fail · 2 skip** in 0.9 s, and boots with the `demo_show-rules` run ready to browse |
 | **The live deployment** (`https://promo-finder-mern.onrender.com`, Render free, Blueprint from `render.yaml`) | `/api/selftest` **11 pass · 0 fail · 2 skip**, `/api/runs` shows the seeded `demo_show-rules` run (3 clips), storyboard 27 lines, CSV 17 columns |
 | The Docker image, built and run locally (`docker build -f mern/Dockerfile .`) | same **11 pass · 0 fail · 2 skip** inside the container, storyboard served from MongoDB after a restart, and `/app` free of Kuku's material |
+
+Recorded while this app was built, against the original single-file UI. That UI has since been
+removed from the repo (`git show v1.0-kuku-submission:promo_finder/web/index.html` if you want
+it), so these are history rather than a command you can re-run — they are what "faithful
+replica" was measured against:
+
+| Check | Result |
+|---|---|
+| `/api/runs/full_run/promos` vs the reference API | 149/149 clips, 0 field mismatches, same segments, judge and summary |
+| Storyboard for `E24-P1` | identical payload: 35 lines, 8 “after the cut” |
+| DOM parity, main page | every probed element matches on width/height/font/colour/radius/padding; 61 posters, 10 rail items |
+| DOM parity, storyboard dialog | same 35 lines, same tag chips, same meters, same column width |
 
 ## Deploy
 
