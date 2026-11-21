@@ -258,7 +258,7 @@ function ReadOnlyNotice({ onHow }) {
       <div className="txt">
         <b>Sample shows only.</b> The assignment's 50-episode pack was processed locally, on my own machine, because the
         brief says that material must not be published or shared — so no run here contains it. This copy is for browsing
-        the product: pick a run, open a storyboard, review, export. To run your own scripts or a test zip, install it and
+        the product: pick a run, open a storyboard, review, export. To run your own scripts or a test zip, clone <a href="https://github.com/Abhi-shek26/KukuAILabs" target="_blank" rel="noreferrer">the repository</a> and
         upload locally; nothing leaves your computer.
       </div>
       <button className="pill sm" onClick={onHow}>
