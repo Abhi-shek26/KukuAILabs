@@ -1,5 +1,5 @@
 // Static explainer, copied verbatim from the Python page.
-export default function HowItWorks() {
+export default function HowItWorks({ config }) {
   return (
     <div className="panel">
       <h2>How Promo Finder works</h2>
@@ -48,6 +48,48 @@ export default function HowItWorks() {
           Any OpenAI-compatible API works: one model to find candidates, another to judge, a fallback for content refusals, and a hard
           budget cap. The default runs on Qubrid's cheapest model, free.
         </p>
+      </div>
+
+      <div id="local" className="box" style={{ marginTop: 16 }}>
+        <h4>Run it on your own scripts — and keep them yours</h4>
+        <p style={{ marginBottom: 10 }}>
+          Your zip or folder is read on your machine and nowhere else. This is the whole path, from download to a ranked list:
+        </p>
+        <ol className="path">
+          <li>
+            <b>Install and start.</b> <code>npm run app</code> from the repo root. It installs the client and server once, checks
+            that MongoDB is answering (and tells you the one command to start it), then serves the API on <code>:4000</code> and
+            the app on <code>:5173</code>.
+          </li>
+          <li>
+            <b>Drop the scripts in.</b> On the <i>New run</i> tab, pick a show folder on disk or drop a <code>.zip</code> of episode
+            scripts. The zip is unpacked into <code>uploads/&lt;show&gt;/</code> on your computer — nothing is sent to this site.
+          </li>
+          <li>
+            <b>Run it.</b> The pipeline writes <code>outputs/&lt;run&gt;/</code> beside the app: the ranked list, the CSV, the report and
+            every raw prompt and reply. Only the clip index goes into your own local MongoDB.
+          </li>
+          <li>
+            <b>Review and export.</b> ✓ post / ✗ skip in the app, then ⬇ Export for the edit. Re-uploading under the same show name
+            adds to that folder instead of making a new one.
+          </li>
+        </ol>
+        <p className="muted" style={{ marginTop: 10 }}>
+          <b>Why it stays local:</b>
+        </p>
+        <ul className="safety">
+          <li>The app binds to <code>127.0.0.1</code>, so nothing on your network can reach it by default.</li>
+          <li><code>uploads/</code>, <code>outputs/</code> and <code>.env</code> are git-ignored — a zip, its results or your key cannot be committed by accident.</li>
+          <li>Outbound calls go only to the model provider you configured; a zip is never sent to this site or to any third party.</li>
+          <li>Zips are unpacked defensively: text files only (<code>.txt .md .fountain</code>), paths flattened so <code>../</code> cannot escape, ≤5 MB per file, ≤100 MB unzipped.</li>
+        </ul>
+        {config?.read_only && (
+          <p className="muted" style={{ marginTop: 8 }}>
+            <b>On this hosted copy:</b> uploading and running are refused on purpose (read-only demo, one shared database with no
+            accounts), so a visitor's scripts could never be visible to another visitor. That is the only thing missing here — the
+            steps above are the same code.
+          </p>
+        )}
       </div>
     </div>
   );

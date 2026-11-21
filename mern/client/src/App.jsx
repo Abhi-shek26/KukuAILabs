@@ -171,6 +171,14 @@ export default function App() {
       />
 
       <main>
+        {config?.read_only && (
+          <ReadOnlyNotice
+            onHow={() => {
+              changeTab("how");
+              setTimeout(() => document.getElementById("local")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+            }}
+          />
+        )}
         <section style={{ display: tab === "promos" ? "block" : "none" }}>
           {data?.unfinished ? (
             <div className="empty">{data.message}</div>
@@ -220,7 +228,7 @@ export default function App() {
         </section>
 
         <section style={{ display: tab === "how" ? "block" : "none" }}>
-          <HowItWorks />
+          <HowItWorks config={config} />
         </section>
 
         <footer>Promo Finder · built for the Kuku AI Generalist assignment · timestamps are script timings (MM:SS.ss from the start of each episode)</footer>
@@ -238,5 +246,27 @@ export default function App() {
 
       {toast && <div id="toast" className="show">{toast}</div>}
     </>
+  );
+}
+
+// Shown only when the deployment is read-only: says what this database holds, why,
+// and where to run your own scripts instead. Deliberately first thing under the header.
+function ReadOnlyNotice({ onHow }) {
+  return (
+    <div className="notice" role="note">
+      <span className="tag">Read-only demo</span>
+      <div className="txt">
+        <b>Sample shows only.</b> The assignment's 50-episode pack was processed locally, on my own machine, because the
+        brief says that material must not be published or shared — so no run here contains it. This copy is for browsing
+        the product: pick a run, open a storyboard, review, export. To run your own scripts or a test zip, install it and
+        upload locally; nothing leaves your computer.
+      </div>
+      <button className="pill sm" onClick={onHow}>
+        How to run it locally
+      </button>
+      <a className="pill sm ghost" href="/verify" target="_blank" rel="noreferrer">
+        Self-check
+      </a>
+    </div>
   );
 }
