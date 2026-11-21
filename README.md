@@ -190,7 +190,7 @@ Same pipeline, same show; only `--model` changed:
 
 ### Web app (`mern/`)
 ```bash
-cd mern && npm run install:all && npm run dev     # API :4000, UI :5173
+npm run app                   # from the repo root: deps, MongoDB check, API :4000, UI :5173
 ```
 Setup, the API reference, the self-test page and the deployed demo: **[mern/README.md](mern/README.md)**.
 - **New run:** pick a show folder on this computer or upload a `.zip` / `.txt` scripts. You see the episode count, runtime and any format warnings straight away. Choose the provider, model, judge model, fallback, parallel requests and budget cap, then press **Find promos**. Progress is live per step, along with calls, cache hits and money spent, and you can cancel.
