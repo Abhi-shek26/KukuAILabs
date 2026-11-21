@@ -5,6 +5,10 @@
 Promo Finder reads the timestamped screenplays of a microdrama and returns a **ranked shortlist of 20–60 second promo clips**. For each clip you get the episode, the exact start and end of every segment, the hook in the first 3 seconds, the cliffhanger it cuts on, why it works, and why it sits at that rank. It comes as a **command-line tool** and as a **web app styled like Kuku's own product**
 (React + Express + MongoDB — see [mern/](mern/README.md)), where an editor can review every clip (✓ post / ✗ skip) and export the list for the edit.
 
+**Live demo:** **[https://promo-finder-mern.onrender.com](https://promo-finder-mern.onrender.com)** — read-only: browse the finished runs, open a storyboard, mark ✓ post / ✗ skip, export the CSV. Uploading a show and starting a run are disabled there on purpose (details below).
+
+**What runs where, and why.** Every number in this README comes from the **assignment's input pack, run locally on my own machine** — 50 episodes, 3,727 timed lines, 102.7 minutes → **149 ranked clips for $0** — and every model configuration was exercised the same way against that pack: the free default, a paid flash model and a frontier model (§6). The brief says the provided material must not be published or shared, so it never enters the repo, the Docker image or the deployment. The live instance therefore carries **only runs over original sample shows I wrote for this project** (`examples/demo_show`, 3 episodes, and a synthetic 6-episode test show): it is a **sample of the product, not of the evaluation**. To see the real thing, drop the pack in `input_pack/<show>/` and run `parse` then `run` — nothing is uploaded anywhere.
+
 ```bash
 npm run app                                                    # web app → http://localhost:5173
 python3 -m promo_finder run "input_pack/<show folder>"          # same pipeline from the terminal
@@ -243,6 +247,9 @@ python3 -m promo_finder models                         # provider's models, chea
 - Spoilers are acceptable when the title already reveals the premise.
 
 **Limits:** see "Where it picks badly" above. The free tier is slow (one request at a time). The judge is a small model and is noisy, so treat the output as a **shortlist for an editor**.
+
+**What the hosted demo runs — and with whose data**
+The live instance carries **only runs over original sample shows** (`examples/demo_show` and a synthetic 6-episode test show). Everything measured in this README was produced locally from the assignment's pack, which is git-ignored and never deployed — the reasoning is in the summary at the top of this README.
 
 **What the hosted demo does and does not do**
 - The deployment at `https://promo-finder-mern.onrender.com` is a **read-only demo**: finished runs, the
